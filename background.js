@@ -22,7 +22,8 @@ browser.browserAction.onClicked.addListener(wrap(async tab => {
   } else await browser.tabs.executeScript({
     code: `browser.runtime.sendMessage({
       tab: ${tab.id},
-      path: prompt(${await browser.storage.local.get('path').path})
+      path:
+        prompt(${JSON.stringify(await browser.storage.local.get('path').path)})
     });`
   });
 }));
