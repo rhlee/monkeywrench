@@ -32,7 +32,7 @@ browser.runtime.onMessage.addListener(wrap(async (message, sender) => {
   switch (message) {
     case null: break;
     case "":
-      await browser.storage.local.clear('path');
+      await browser.storage.local.clear();
       break;
     default:
       tabActive = message.tab;
