@@ -3,6 +3,6 @@
   "name": "Monkey Wrench",
   "version": "0",
   "permissions": ["activeTab", "storage"],
-  "background": {"scripts": ["background.js"]},
+  "background": {"scripts": ["wrench.js"]},
   "browser_action": {"default_title": "Monkey Wrench"}
 }
