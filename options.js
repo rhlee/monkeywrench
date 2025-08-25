@@ -14,7 +14,7 @@ document.addEventListener(
           type: 'stdio',
           allowed_extensions: [browser.runtime.id]
         },
-        'text/json'
+        'application/json'
       ),
       "monkeywrench.json"
     );
