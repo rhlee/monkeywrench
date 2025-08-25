@@ -7,7 +7,7 @@ browser.runtime.onConnect.addListener(connection => {
   if (!host) {
     host = browser.runtime.connectNative('monkeywrench');
     host.onDisconnect.addListener(() => {
-      connection.postMessage({type: pong ? 'pong' : 'failure'});
+      connection.postMessage({result: pong ? 'success' : 'failure'});
       host = null;
       pong = false;
     });
