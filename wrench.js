@@ -1,23 +1,39 @@
 "use strict";
 
-let host = null;
-let pong = false;
+class ConnectionNative {
+  static connection = null;
+  static lastInformation = "disconnected from native host";
 
-browser.runtime.onConnect.addListener(connection => {
-  if (!host) {
-    host = browser.runtime.connectNative('monkeywrench');
-    host.onDisconnect.addListener(() => {
-      connection.postMessage({result: pong ? 'success' : 'failure'});
-      host = null;
-      pong = false;
+  static inform(message) {
+    this.lastInformation = message;
+    browser.runtime.sendMessage({type: 'information', information: message});
+  }
+
+  static update() {
+    this.inform(this.lastInformation);
+  }
+
+  constructor(application) {
+    this.application = application;
+  }
+
+  connect() {
+    let constructor = this.constructor;
+    constructor.inform("connecting to native host");
+    constructor.connection
+      = constructor.connectNative('monkeywrench');
+    constructor.connection.onDisconnect.addListener(() => {
+      constructor.inform("disconnected from native host");
+      constructor.connection = null;
+      constructor.lastInformation = null;
     });
-    host.onMessage.addListener(message => {
-      switch (message.type) {
-        case 'pong':
-          pong = true;
-          break;
-      }
-    });
-    host.postMessage({type: 'ping'});
+  }
+}
+
+browser.runtime.onMessage.addListener(message => {
+  switch (message.type) {
+    case 'update':
+      ConnectionNative.update();
+      break;
   }
 });

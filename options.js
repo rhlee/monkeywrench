@@ -18,19 +18,22 @@ document.addEventListener(
       ),
       "monkeywrench.json"
     );
+    browser.runtime.onMessage.addListener(message => {
+      const item = document.createElement('li');
+      item.textContent = JSON.stringify(message);
+      log.appendChild(item);
+    });
+    browser.runtime.sendMessage({type: 'update'});
   }
 );
-
-const port = browser.runtime.connect({name: 'connection'});
-port.onMessage.addListener(message => {result.innerHTML = message.result;});
 
 const createURL = (data, type) =>
   URL.createObjectURL(new Blob([JSON.stringify(data)], {type: type}));
 
 const download = (_URL, name) => {
-    const anchor = document.createElement('a');
-    anchor.href = _URL;
-    anchor.download = name;
-    anchor.click();
-    URL.revokeObjectURL(_URL);
+  const anchor = document.createElement('a');
+  anchor.href = _URL;
+  anchor.download = name;
+  anchor.click();
+  URL.revokeObjectURL(_URL);
 };
