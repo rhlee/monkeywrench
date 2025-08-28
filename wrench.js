@@ -1,39 +1,37 @@
 "use strict";
 
-class ConnectionNative {
-  static connection = null;
-  static lastInformation = "disconnected from native host";
+let connection = null;
+let lastInformation = "disconnected from native host";
 
-  static inform(message) {
-    this.lastInformation = message;
-    browser.runtime.sendMessage({type: 'information', information: message});
-  }
-
-  static update() {
-    this.inform(this.lastInformation);
-  }
-
-  constructor(application) {
-    this.application = application;
-  }
-
-  connect() {
-    let constructor = this.constructor;
-    constructor.inform("connecting to native host");
-    constructor.connection
-      = constructor.connectNative('monkeywrench');
-    constructor.connection.onDisconnect.addListener(() => {
-      constructor.inform("disconnected from native host");
-      constructor.connection = null;
-      constructor.lastInformation = null;
-    });
-  }
+const connect = () => {
+  inform("connecting to native host");
+  connection = browser.runtime.connectNative('monkeywrench');
+  connection.onDisconnect.addListener(() => {
+    connection = null;
+    inform("disconnected from native host");
+  });
+  send({type: 'ping'});
 }
+
+const inform = message => {
+  browser.runtime.sendMessage({type: 'information', information: message});
+  lastInformation = message;
+}
+
+const update = () => inform(lastInformation);
+
+const send = async message => {
+  await browser.runtime.sendMessage({type: 'send', message: message});
+  connection.postMessage(message);
+};
 
 browser.runtime.onMessage.addListener(message => {
   switch (message.type) {
     case 'update':
-      ConnectionNative.update();
+      update();
+      break;
+    case 'test':
+      connect();
       break;
   }
 });

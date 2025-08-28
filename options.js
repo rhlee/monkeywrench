@@ -18,11 +18,15 @@ document.addEventListener(
       ),
       "monkeywrench.json"
     );
+    test.onclick
+      = async () => await browser.runtime.sendMessage({type: 'test'});
+
     browser.runtime.onMessage.addListener(message => {
-      const item = document.createElement('li');
-      item.textContent = JSON.stringify(message);
-      log.appendChild(item);
+      const entry = document.createElement('p');
+      entry.textContent = JSON.stringify(message);
+      log.appendChild(entry);
     });
+
     await browser.runtime.sendMessage({type: 'update'});
   }
 );
