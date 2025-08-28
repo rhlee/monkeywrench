@@ -63,12 +63,15 @@ class Writer(Native):
 class Monkey:
   async def __call__(self):
     loop = get_running_loop()
+    __, self.writer = await loop.connect_write_pipe(Writer, stdout.buffer)
     __, self.reader \
       = await loop.connect_read_pipe(lambda: Reader(self.handle), stdin.buffer)
-    __, self.writer = await loop.connect_write_pipe(Writer, stdout.buffer)
     await gather(self.reader.isClosed, self.writer.isClosed)
 
-  def handle(self, message): print(message, file = stderr)
+  def handle(self, message):
+    match message['type']:
+      case 'ping':
+        self.writer.send(dict(type = 'pong'))
 
 
 if __name__ == '__main__': run(Monkey()())

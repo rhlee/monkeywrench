@@ -6,6 +6,9 @@ let lastInformation = "disconnected from native host";
 const connect = () => {
   inform("connecting to native host");
   connection = browser.runtime.connectNative('monkeywrench');
+  connection.onMessage.addListener(async message =>
+    await browser.runtime.sendMessage({type: 'receive', message: message})
+  );
   connection.onDisconnect.addListener(() => {
     connection = null;
     inform("disconnected from native host");
