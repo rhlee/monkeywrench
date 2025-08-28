@@ -2,7 +2,7 @@
 
 document.addEventListener(
   'DOMContentLoaded',
-  () => {
+  async () => {
     host.onclick = () => download(browser.runtime.getURL("monkey"), "monkey");
     path.oninput = event => {manifest.disabled = !event.target.value;}
     manifest.onclick = () => download(
@@ -23,7 +23,7 @@ document.addEventListener(
       item.textContent = JSON.stringify(message);
       log.appendChild(item);
     });
-    browser.runtime.sendMessage({type: 'update'});
+    await browser.runtime.sendMessage({type: 'update'});
   }
 );
 
