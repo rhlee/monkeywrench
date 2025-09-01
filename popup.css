@@ -1,0 +1,13 @@
+#controls {
+  &.watching {
+    #play {
+      display: none;
+    }
+  }
+
+  &:not(.watching) {
+    #_stop {
+      display: none;
+    }
+  }
+}

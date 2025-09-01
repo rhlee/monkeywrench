@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 
-from asyncio import Protocol, Event, get_running_loop, run, gather
+from asyncio import (
+  Protocol,
+  Event,
+  get_running_loop,
+  run,
+  gather,
+  create_task
+)
 from sys import stdin, stdout, stderr
 from json import dumps, loads
 from struct import pack, unpack
 from abc import ABC
 from enum import Enum, auto
+
+from asyncinotify import Inotify, Mask
 
 
 class Field(Enum):
@@ -61,6 +70,11 @@ class Writer(Native):
     self.transport.write(pack(self.FORMAT, len(payload)) + payload)
 
 class Monkey:
+  COOLDOWN = 1
+
+  def __init__(self):
+    self.timestamp = 0
+
   async def __call__(self):
     loop = get_running_loop()
     __, self.writer = await loop.connect_write_pipe(Writer, stdout.buffer)
@@ -72,6 +86,19 @@ class Monkey:
     match message['type']:
       case 'ping':
         self.writer.send(dict(type = 'pong'))
+      case 'action':
+        create_task(self.watch(message['path']))
+
+  async def watch(self, path):
+    self.writer.send(dict(type = 'action', action = 'watching'))
+    with Inotify() as inotify:
+      inotify.add_watch(path, Mask.MODIFY)
+      loop = get_running_loop()
+      async for notification in inotify:
+        time = loop.time()
+        if time - self.timestamp > self.COOLDOWN:
+          print(notification, file = stderr)
+          self.timestamp = time
 
 
 if __name__ == '__main__': run(Monkey()())
