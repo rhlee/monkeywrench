@@ -1,58 +1,36 @@
 "use strict";
 
 let connection = null;
-let lastInformation = "disconnected from native host";
+let resolve;
 
-const connect = test => {
-  inform("connecting to native host");
-  connection = browser.runtime.connectNative('monkeywrench');
-  connection.onMessage.addListener(async message => {
-    await browser.runtime.sendMessage({type: 'receive', message: message});
-    switch (message.type) {
-      case 'pong':
-        if (test) disconnect();
-        break;
-    }
-  });
-  connection.onDisconnect.addListener(() => {
-    connection = null;
-    inform("disconnected from native host");
-  });
-  send({type: 'ping'});
-}
-
-const disconnect = () => {
-  connection.disconnect();
-  connection = null;
-  inform("disconnected from native host");
-};
-
-const inform = message => {
-  browser.runtime.sendMessage({type: 'information', information: message});
-  lastInformation = message;
-};
-
-const update = () => {
-  inform(lastInformation);
-  browser.runtime.sendMessage({type: 'status', status: 'stopped'});
-};
-
-const send = async message => {
-  await browser.runtime.sendMessage({type: 'send', message: message});
-  connection.postMessage(message);
-};
-
-browser.runtime.onMessage.addListener(message => {
+browser.runtime.onMessage.addListener(async message => {
   switch (message.type) {
-    case 'update':
-      update();
-      break;
     case 'test':
-      connect(true);
-      break;
-    case 'action':
-      if (!connection) connect();
-      send(message);
+      if (connection) return true;
+      else {
+        connect();
+        return await send({type: 'ping'}) === 'pong' && await stop();
+      }
       break;
   }
 });
+
+const connect = () => {
+  connection = browser.runtime.connectNative('monkeywrench');
+  connection.onMessage.addListener(message => {
+    let reply = message.reply;
+    if (reply) {
+      resolve(reply);
+      resolve = null;
+    } else handleEvent(message);
+  });
+};
+
+const send = message => {
+  console.assert(!resolve);
+  let promise = new Promise(_resolve => resolve = _resolve);
+  connection.postMessage(message);
+  return promise;
+};
+
+const stop = async () => await send({type: 'stop'}) === 'stopped';

@@ -3,17 +3,16 @@
   <head>
     <meta charset=utf-8>
     <title>monkeywrench Options</title>
+    <script src="browser-polyfill.js"></script>
     <script src="options.js" defer></script>
   </head>
   <body>
-    <ol>
-      <li><button id="host">Download native host</button></li>
-      <li><input id="path" type="text"/></li>
-      <li><button id="manifest" disabled="true">
+    <div id="controlsManifest">
+      <input id="path" type="text"/>
+      <button id="manifest" disabled="true">
         Download native host manifest
-      </button></li>
-    </ol>
+      </button>
+    </div>
     <button id="test">Test</button>
-    <div id="log"></div>
   </body>
 </html>

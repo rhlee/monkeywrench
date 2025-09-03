@@ -70,10 +70,11 @@ class Writer(Native):
     self.transport.write(pack(self.FORMAT, len(payload)) + payload)
 
 class Monkey:
-  COOLDOWN = 1
+  COOLDOWN = 0.1
 
   def __init__(self):
     self.timestamp = 0
+    self.task = None
 
   async def __call__(self):
     loop = get_running_loop()
@@ -85,20 +86,29 @@ class Monkey:
   def handle(self, message):
     match message['type']:
       case 'ping':
-        self.writer.send(dict(type = 'pong'))
-      case 'action':
-        create_task(self.watch(message['path']))
+        self.send(reply = 'pong')
+      case 'watch':
+        self.task = create_task(self.watch(message['path']))
+        self.send(reply = 'watching')
+      case 'stop':
+        if self.task: self.task.cancel()
+        else: self.send(reply = 'stopped')
+
+  def send(self, **message):
+    self.writer.send(message)
 
   async def watch(self, path):
-    self.writer.send(dict(type = 'action', action = 'watching'))
-    with Inotify() as inotify:
-      inotify.add_watch(path, Mask.MODIFY)
-      loop = get_running_loop()
-      async for notification in inotify:
-        time = loop.time()
-        if time - self.timestamp > self.COOLDOWN:
-          print(notification, file = stderr)
-          self.timestamp = time
+    try:
+      with Inotify() as inotify:
+        inotify.add_watch(path, Mask.MODIFY)
+        loop = get_running_loop()
+        async for notification in inotify:
+          time = loop.time()
+          if time - self.timestamp > self.COOLDOWN:
+            print(notification, file = stderr)
+            self.timestamp = time
+    finally:
+      self.send(reply = 'stopped')
 
 
 if __name__ == '__main__': run(Monkey()())
