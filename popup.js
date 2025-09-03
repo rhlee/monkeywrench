@@ -6,19 +6,21 @@ document.addEventListener(
     options.onclick = () => browser.runtime.openOptionsPage();
     watch.onclick = async () => {
       await browser.storage.local.set({path: path.value});
-      browser.runtime.sendMessage
-        ({type: 'action', action: 'watch', path: path.value});
+      console.assert
+        (await browser.runtime.sendMessage({type: 'watch', path: path.value}));
+      set(true);
     };
-    browser.runtime.onMessage.addListener(message => {
-      switch (message.type) {
-        case 'status':
-          controls.class = message.status;
-          path.disabled = message.status === 'watching';
-          break;
-      }
-    });
+    _stop.onclick = async() => {
+      console.assert(await browser.runtime.sendMessage({type: 'stop'}));
+      set(false);
+    };
     path.value = (await browser.storage.local.get('path')).path ?? "";
-    browser.runtime.sendMessage({type: 'update'});
+    set(await browser.runtime.sendMessage({type: 'watching'}));
   }
 );
 
+const set = watching => {
+  let list = controls.classList;
+  (watching ? list.add : list.remove).bind(list)('watching');
+  path.disabled = watching;
+};

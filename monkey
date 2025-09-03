@@ -60,7 +60,7 @@ class Reader(Native):
           self.length, *_ = unpack(self.FORMAT, field)
           self.expectation = Field.PAYLOAD
         case Field.PAYLOAD:
-          self.callback(loads(field.decode()))
+          create_task(self.callback(loads(field.decode())))
           self.length = self.LENGTH
           self.expectation = Field.LENGTH
 
@@ -75,6 +75,8 @@ class Monkey:
   def __init__(self):
     self.timestamp = 0
     self.task = None
+    self.finished = Event()
+    self.finished.set()
 
   async def __call__(self):
     loop = get_running_loop()
@@ -83,21 +85,28 @@ class Monkey:
       = await loop.connect_read_pipe(lambda: Reader(self.handle), stdin.buffer)
     await gather(self.reader.isClosed, self.writer.isClosed)
 
-  def handle(self, message):
+  async def handle(self, message):
     match message['type']:
-      case 'ping':
-        self.send(reply = 'pong')
+      case 'test':
+        self.confirm()
       case 'watch':
         self.task = create_task(self.watch(message['path']))
-        self.send(reply = 'watching')
+        self.confirm()
       case 'stop':
         if self.task: self.task.cancel()
-        else: self.send(reply = 'stopped')
+        await self.finished.wait()
+        self.confirm()
+        self.reader.transport.close()
+        self.writer.transport.close()
 
   def send(self, **message):
     self.writer.send(message)
 
+  def confirm(self):
+    self.send(reply = True)
+
   async def watch(self, path):
+    self.finished.clear()
     try:
       with Inotify() as inotify:
         inotify.add_watch(path, Mask.MODIFY)
@@ -108,7 +117,7 @@ class Monkey:
             print(notification, file = stderr)
             self.timestamp = time
     finally:
-      self.send(reply = 'stopped')
+      self.finished.set()
 
 
 if __name__ == '__main__': run(Monkey()())
