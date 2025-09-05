@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Monkey Wrench",
   "version": "0",
-  "permissions": ["storage", "nativeMessaging"],
+  "permissions": ["storage", "nativeMessaging", "tabs"],
   "browser_action":
     {"default_title": "Monkey Wrench", "default_popup": "popup.html"},
   "options_ui": {"page": "options.html"},

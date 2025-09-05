@@ -4,10 +4,13 @@ document.addEventListener(
   'DOMContentLoaded',
   async () => {
     options.onclick = () => browser.runtime.openOptionsPage();
-    watch.onclick = async () => {
+    watch.onclick = async event => {
       await browser.storage.local.set({path: path.value});
-      console.assert
-        (await browser.runtime.sendMessage({type: 'watch', path: path.value}));
+      console.assert(await browser.runtime.sendMessage({
+        type: 'watch',
+        path: path.value,
+        tab: (await browser.tabs.query({active: true}))[0].id
+      }));
       set(true);
     };
     _stop.onclick = async() => {

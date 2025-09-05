@@ -2,6 +2,11 @@
 
 let connection = null;
 let resolve;
+let tab;
+
+browser.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 0]})
+browser.browserAction.setBadgeText({text: "🔴"});
+
 
 browser.runtime.onMessage.addListener(async message => {
   switch (message.type) {
@@ -18,10 +23,15 @@ browser.runtime.onMessage.addListener(async message => {
     case 'watch':
       console.assert(connection === null);
       connect();
+      tab = message.tab;
+      await browser.browserAction.setBadgeText({text: "🟠"});
+      await browser.browserAction.setBadgeText({text: "🟢", tabId: tab});
       return await send(message);
       break;
     case 'stop':
       let reply = await stop();
+      await browser.browserAction.setBadgeText({text: "🔴"});
+      await browser.browserAction.setBadgeText({text: null, tabId: tab});
       return reply;
       break;
   }
