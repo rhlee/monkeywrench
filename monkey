@@ -13,6 +13,7 @@ from json import dumps, loads
 from struct import pack, unpack
 from abc import ABC
 from enum import Enum, auto
+from pathlib import Path
 
 from asyncinotify import Inotify, Mask
 
@@ -70,10 +71,8 @@ class Writer(Native):
     self.transport.write(pack(self.FORMAT, len(payload)) + payload)
 
 class Monkey:
-  COOLDOWN = 0.1
 
   def __init__(self):
-    self.timestamp = 0
     self.task = None
     self.finished = Event()
     self.finished.set()
@@ -99,23 +98,19 @@ class Monkey:
         self.reader.transport.close()
         self.writer.transport.close()
 
-  def send(self, **message):
-    self.writer.send(message)
-
   def confirm(self):
-    self.send(reply = True)
+    self.writer.send(dict(reply = True))
 
   async def watch(self, path):
+    _path = Path(path)
     self.finished.clear()
     try:
       with Inotify() as inotify:
-        inotify.add_watch(path, Mask.MODIFY)
-        loop = get_running_loop()
+        inotify.add_watch(_path.parent, Mask.CLOSE_WRITE)
         async for notification in inotify:
-          time = loop.time()
-          if time - self.timestamp > self.COOLDOWN:
-            print(notification, file = stderr)
-            self.timestamp = time
+          with open(path) as file:
+            if notification.path.name == _path.name:
+              self.writer.send(file.read())
     finally:
       self.finished.set()
 

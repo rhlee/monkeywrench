@@ -49,6 +49,9 @@ const connect = () => {
   connection.onDisconnect.addListener(() => connection = null);
 };
 
+const handleEvent
+  = message => browser.tabs.executeScript(tab, {code: message});
+
 const send = message => {
   console.assert(!resolve);
   let promise = new Promise(_resolve => resolve = _resolve);
