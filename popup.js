@@ -9,7 +9,8 @@ document.addEventListener(
       console.assert(await browser.runtime.sendMessage({
         type: 'watch',
         path: path.value,
-        tab: (await browser.tabs.query({active: true}))[0].id
+        tab:
+          (await browser.tabs.query({active: true, currentWindow: true}))[0].id
       }));
       set(true);
     };
